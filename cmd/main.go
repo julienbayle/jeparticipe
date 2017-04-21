@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/julienbayle/jeparticipe/app"
 )
 
@@ -24,9 +23,9 @@ func main() {
 
 	flag.Parse()
 
-	app := app.NewApp(*dbFile)
-	defer app.ShutDown()
+	jeparticipe := app.NewApp(*dbFile)
+	defer jeparticipe.ShutDown()
 
-	api := app.BuildApi(app.ProdMode, *baseUrl)
+	api := jeparticipe.BuildApi(app.ProdMode, *baseUrl)
 	log.Fatal(http.ListenAndServe(":"+*port, api.MakeHandler()))
 }
