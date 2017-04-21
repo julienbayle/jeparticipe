@@ -1,60 +1,75 @@
-Je participe
+Je participe ("I participate")
 ============
 
-Solution simple pour organiser le "qui donne un coup de main à quoi" d'une manifestation en partant des souhaits de chacun.
+"Je participe" is a doodle-like service to organize an event with many activities and participants.
+This service was initially built to organize end of the year party for schools. 
 
-Accessible à tous, cette solution est un simple exécutable qui fonctionne aussi bien sur un serveur que directement sur le poste personnel d'un organisateur.
+An activity is a task or responsability during the event like running the bar from 14h00 to 16h00, making some cookies, housecleening on sunday, ...
 
-Fonctionnement
---------------
+The purpose of the project is to simplify the task for event organizers to get volonteers and know who accept to do what and when.
 
-Chaque activité de la manifestation est associée à un "tableau des participants" dans lequel les personnes qui souhaitent y prendre part inscrivent leur nom. Au départ, il s'agit de recueillir les souhaits de participation, on peut donc parler de "tableau des postulants". Pour chaque tableau, il y a un nombre maximal de postulants pouvant s'inscrire et un nombre souhaité de participants.
+  * First, the organizer describes all the activities in the event board page
+  * Then, volonteers write their names in every activity they like (For real, organizers send some stimulant email to motivate them)
+  * Step by step, all the activities gets volunteers and reach the maximum participants limit (if there is one in your case, free to you).
+  * To finish, organizer closes the inscription for each activity. If needed, very rare in real cases, organiser can remove people from an activity.
 
-Exemple :
- * Description : "Tenue du bar de 14h à 16h"
- * Nombre souhaité de participants : 4
- * Nombre maximal de postulants : 8
- 
-Petit à petit les "tableaux des participants" pour chaque activité se remplissent. Leur fonctionnement est régi par les règles suivantes :
-  1. N'importe qui peut inscrire le nom de n'importe qui dans un tableau (pas besoin de se créer un compte)
-  2. Toute inscription peut être librement annulée par celui qui l'a réalisé tant qu'il n'a pas fermé son navigateur web.
-  3. N'importe qui peut demander l'annulation de participation de n'importe qui dans un tableau. Cette demande d'annulation est accompagnée d'une explication à destination des administrateurs. L'annulation est effective qu'après accord d'un administrateur
-  4. Un administrateur peut figer un à un chaque "tableau de participants". Une fois un "tableau des participants" figé, seul un administrateur peut en modifier les participants.
+Main features :
+  * Each event can have multiple activities (One event = many doodles in one page)
+  * Each activity has its own life cycle, list of participants (or volonteers)
+  * No account is needed for a participant to volountrer to an activity or access the event board (so everybody can write other people names without troubles. This is important because in typical situation, people volunteer as a group, only the responsible of the group writes down the names on the board. The service is based on trust.)
+  * Each participant can send public information (like their names) and private information (like their phone number) when they volonteer.
+  * Private information are only visible by the organizer and the volunteer itself
+  * If a volunteer wants to cancel its participation, he can if he is on same computer (same IP). Else he has to ask the organizer by email for that. Perhaps, this is not obvious, but this rules works fine in previous events without any claim (more than 50 volunteers).
 
-En pratique, tant qu'un tableau n'est pas figé, le "tableau des participants" pour une activité peut être vu comme une "liste de postulants" pour cette activité.
+## Project Status
 
-Cas pratique sur notre exemple :
+Project is in active developpement.
 
-Jacques, Henri, Pierre, Manuela, Jean, Hervé se sont inscrits pour tenir le bar de 14h à 16h. Il reste donc encore 2 personnes qui peuvent postuler pour cette activité. Mais en pratique, 4 personnes sont suffisantes.
-Il se peut que ces 6 personnes est également postulées à d'autres activités à la même heure. Il revient à l'organisateur de décider l'activité retenue pour chacun.
+Database support is limited to [BoltDB -- an embedded key/value database for Go](https://raw.githubusercontent.com/boltdb)
 
-Petit à petit, l'organisateur arbitre l'organisation finale en figeant les tableaux de toutes les activités de la manifestation jusqu'à obtention de l'organisation finale. Il communique alors ce tableau à tous pour une validation définitive. Dès qu'une liste est validée de manière définitive, l'organisateur peut passer l'état d'un tableau à "version finale".
+Sending email is limited to [Mailjet](https://mailjet.com/)
 
+## Getting Started
 
-Installation
-------------
+### Installing
 
-A décrire
+Create a mailjet account and add your API keys to your path :
 
-Description des données
------------------------
+```sh
+export MJ_APIKEY_PUBLIC=xxx
+export MJ_APIKEY_PRIVATE=xxx
+```
 
-Lors du démarrage du serveur, la base de données est initialisée et le mot de passe administrateur est généré. Celui-ci est alors affiché dans la console. A chaque redémarrage du serveur, le mot de passe administrateur est affiché dans la console pour rappel.
+Run a server from code (to be executed in your GOPATH) :
 
-La base de données contient les informations suivantes :
+```sh
+git clone https://github.com/julienbayle/jeparticipe
+go get ./...
+go run cmd/main.go
+```
 
-* Mot de passe administrateur
+### Quick project description
 
-* Demandes de suppression
-  * nom du tableau d'inscription
-  * nom de l'inscrit
-  * motif du demandeur
-  * horodatage de la demande
-  * état (validé / refusé / non traité)
-  * horodatage du traitement de la demande
+app : The application
 
-* Tableaux des inscriptions :
-  * nom du tableau d'inscription
-  * etat du tableau (modifications ouvertes à tous, modifications limitées aux administrateurs, version finale)
-  * liste des inscrits
-  * liste de code de désinscription (1 pour chaque inscrit)
+cmd : Main GO File
+
+email : Sending email tools
+
+entities : Object models
+
+services : REST API methods implementation
+
+templates : mail templates
+
+### API Description
+
+To be added
+
+## ROAD MAP
+
+  * Add a report API
+  * Send email to volunteers from the service
+  * List all events
+  * Support multi-languages
+  * Video presentation
