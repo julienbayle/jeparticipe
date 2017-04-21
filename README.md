@@ -1,7 +1,7 @@
 Je participe ("I participate")
 ============
 
-[![Coverage Status](https://coveralls.io/repos/github/julienbayle/jeparticipe/badge.svg?branch=master)](https://coveralls.io/github/julienbayle/jeparticipe?branch=master)
+[![Build Status](https://travis-ci.org/julienbayle/jeparticipe.svg?branch=master)](https://travis-ci.org/julienbayle/jeparticipe) [![Coverage Status](https://coveralls.io/repos/github/julienbayle/jeparticipe/badge.svg?branch=master)](https://coveralls.io/github/julienbayle/jeparticipe?branch=master)
 
 "Je participe" is a doodle-like service to organize an event with many activities and participants.
 This service was initially built to organize end of the year party for schools. 
