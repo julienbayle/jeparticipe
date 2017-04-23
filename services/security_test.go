@@ -100,3 +100,8 @@ func TestAuthentificator(t *testing.T) {
 	assert.False(t, Authenticate(eventService, "superpass", event.Code+"-admin", ""))
 	assert.True(t, Authenticate(eventService, "superpass", event.Code+"-admin", eventAdminPass))
 }
+
+func TestNewPassword(t *testing.T) {
+	assert.Len(t, NewPassword(4), 4)
+	assert.Len(t, NewPassword(10), 10)
+}

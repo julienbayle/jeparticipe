@@ -6,8 +6,6 @@ import (
 	"errors"
 	"regexp"
 	"time"
-
-	"github.com/cmiceli/password-generator-go"
 )
 
 const (
@@ -43,7 +41,7 @@ func NewPendingConfirmationEvent(code string, ip string, userEmail string) (*Eve
 		CreatedBy:      ip,
 		UserEmail:      userEmail,
 		EmailConfirmed: false,
-		AdminPassword:  pwordgen.NewPassword(8),
+		AdminPassword:  "generatedonconfirm",
 	}, nil
 }
 

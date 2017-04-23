@@ -142,6 +142,7 @@ func (es *EventService) SendEventInformationByMail(w rest.ResponseWriter, r *res
 func (es *EventService) ConfirmAndSaveEvent(event *entities.Event) error {
 	// Save updated event
 	event.EmailConfirmed = true
+	event.AdminPassword = NewPassword(8)
 	es.SaveEvent(event)
 
 	// Init activities collection for this event

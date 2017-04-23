@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/cmiceli/password-generator-go"
 	"github.com/julienbayle/go-json-rest-middleware-jwt"
 	"github.com/julienbayle/jeparticipe/email"
 	"github.com/julienbayle/jeparticipe/services"
@@ -30,10 +29,10 @@ func NewApp(dbFilePath string) *App {
 	repositoryService.CreateCollectionIfNotExists(services.PropertiesBucketName)
 
 	// App secret is used to generate tokens (event confirmation code, JWT toket, ...)
-	secret := services.GetProperty(repositoryService, "secret", pwordgen.NewPassword(64))
+	secret := services.GetProperty(repositoryService, "secret", services.NewPassword(64))
 
 	// Superadmin password allows to be admin in all events
-	superAdminPassword := services.GetProperty(repositoryService, "secret", pwordgen.NewPassword(12))
+	superAdminPassword := services.GetProperty(repositoryService, "secret", services.NewPassword(12))
 
 	return &App{
 		Secret:             secret,

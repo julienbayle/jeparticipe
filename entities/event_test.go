@@ -17,7 +17,7 @@ func TestNewEvent(t *testing.T) {
 	assert.Equal(t, "email@email.com", event.UserEmail)
 	assert.True(t, event.CreatedAt.Before(time.Now()))
 	assert.False(t, event.EmailConfirmed)
-	assert.Len(t, event.AdminPassword, 8)
+	assert.Equal(t, event.AdminPassword, "generatedonconfirm")
 
 	// Invalid code
 	event, err = NewPendingConfirmationEvent("c", "ip", "email@email.com")

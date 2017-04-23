@@ -143,13 +143,14 @@ func TestConfirmEvent(t *testing.T) {
 	recorded.BodyIs("{\"Error\":\"Invalid confirmation code\"}")
 
 	// ------------------------------------
-	// Valid confirmation code
+	// Confirmation code valid
 	// ------------------------------------
 
 	jeparticipe.EventService.EmailRelay = &email.EmailRelay{
 		Send: func(email *email.Email) error {
-			if !strings.Contains(email.Body, event.AdminPassword) {
-				t.Errorf("Email body is suspect : %s", email.Body)
+			updatedEvent := jeparticipe.EventService.GetEvent(event.Code)
+			if !strings.Contains(email.Body, updatedEvent.AdminPassword) {
+				t.Errorf("Email body is suspect : %s, password %s", email.Body, updatedEvent.AdminPassword)
 			}
 			if email.To != "test@test.com" {
 				t.Errorf("Bad recipient")
