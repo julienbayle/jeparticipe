@@ -22,15 +22,14 @@ func NewEmail(to string, subject, body string) *Email {
 }
 
 // Updates body using a HTML template
-func (email *Email) AddBodyUsingTemplate(templateFileName string, data interface{}) error {
+func (email *Email) AddBodyUsingTemplate(templateFileName string, data interface{}) {
 	t, err := template.ParseFiles(templateFileName)
 	if err != nil {
-		return err
+		panic("Missing template " + templateFileName)
 	}
 	buf := new(bytes.Buffer)
 	if err = t.Execute(buf, data); err != nil {
-		return err
+		panic("Template building process failed " + templateFileName)
 	}
 	email.Body = buf.String()
-	return nil
 }
