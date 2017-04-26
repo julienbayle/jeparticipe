@@ -24,7 +24,7 @@ func (es *EventService) GetEventStatus(w rest.ResponseWriter, r *rest.Request) {
 	eventCode := getEventCodeFromRequest(r)
 	event := es.GetEvent(eventCode)
 
-	if event.Code != eventCode {
+	if event == nil {
 		rest.Error(w, "Invalid code", http.StatusNotFound)
 		return
 	}
@@ -39,6 +39,12 @@ func (es *EventService) CreatePendingEvent(w rest.ResponseWriter, r *rest.Reques
 
 	if err != nil {
 		rest.Error(w, err.Error(), http.StatusNotAcceptable)
+		return
+	}
+
+	eventExist := es.GetEvent(eventPayload.Code)
+	if eventExist != nil {
+		rest.Error(w, "An event with this code already exists", http.StatusForbidden)
 		return
 	}
 
@@ -65,7 +71,7 @@ func (es *EventService) ConfirmEvent(w rest.ResponseWriter, r *rest.Request) {
 	eventCode := getEventCodeFromRequest(r)
 	event := es.GetEvent(eventCode)
 
-	if event.Code != eventCode {
+	if event == nil {
 		rest.Error(w, "Invalid code", http.StatusNotFound)
 		return
 	}
@@ -106,7 +112,7 @@ func (es *EventService) SendEventInformationByMail(w rest.ResponseWriter, r *res
 	eventCode := getEventCodeFromRequest(r)
 	event := es.GetEvent(eventCode)
 
-	if event.Code != eventCode {
+	if event == nil {
 		rest.Error(w, "Invalid code", http.StatusNotFound)
 		return
 	}
@@ -153,6 +159,10 @@ func (es *EventService) ConfirmAndSaveEvent(event *entities.Event) error {
 func (es *EventService) GetEvent(eventCode string) *entities.Event {
 	event := &entities.Event{}
 	es.RepositoryService.GetDocument(EventsBucketName, eventCode, event)
+	if event.Code == "" {
+		return nil
+	}
+
 	return event
 }
 

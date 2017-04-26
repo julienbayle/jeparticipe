@@ -108,6 +108,23 @@ func TestCreatePendingEvent(t *testing.T) {
 
 	event := jeparticipe.EventService.GetEvent("myevent")
 	assert.False(t, event.EmailConfirmed)
+
+	// ------------------------------------
+	// Event already exists
+	// ------------------------------------
+
+	jeparticipe.EventService.EmailRelay = &email.EmailRelay{
+		Send: func(email *email.Email) error {
+			t.Errorf("No email should be sent")
+			return nil
+		},
+	}
+	data = &map[string]string{"code": "myevent", "userEmail": "test@test.com"}
+	rq = test.MakeSimpleRequest("POST", "/event", data)
+	rq.Header.Set("X-Real-IP", "111.111.111.111")
+	recorded = test.RunRequest(t, handler, rq)
+	recorded.CodeIs(403)
+	recorded.BodyIs("{\"Error\":\"An event with this code already exists\"}")
 }
 
 func TestConfirmEvent(t *testing.T) {

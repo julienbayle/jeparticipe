@@ -15,13 +15,24 @@ type ActivityService struct {
 
 // Returns an activity by its code or inits a new activity without saving it to the database
 func (as *ActivityService) GetActivity(w rest.ResponseWriter, r *rest.Request) {
-	activity := as.getOrCreateActivityFromRequest(r)
+	activity, err := as.getOrCreateActivityFromRequest(r)
+
+	if err != nil {
+		rest.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
 	returnActivityAsJson(activity, w, r)
 }
 
 // Adds a participant to an activity
 func (as *ActivityService) AddAParticipantToAnActivity(w rest.ResponseWriter, r *rest.Request) {
-	activity := as.getOrCreateActivityFromRequest(r)
+	activity, err := as.getOrCreateActivityFromRequest(r)
+
+	if err != nil {
+		rest.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
 	if !activity.IsOpen() && !hasAdminPriviledge(r) {
 		rest.Error(w, "Access forbidden", http.StatusForbidden)
@@ -39,7 +50,7 @@ func (as *ActivityService) AddAParticipantToAnActivity(w rest.ResponseWriter, r 
 	}
 
 	participant := &entities.Participant{}
-	err := r.DecodeJsonPayload(&participant)
+	err = r.DecodeJsonPayload(&participant)
 	if err != nil {
 		rest.Error(w, err.Error(), http.StatusNotAcceptable)
 		return
@@ -58,7 +69,13 @@ func (as *ActivityService) AddAParticipantToAnActivity(w rest.ResponseWriter, r 
 
 // Removes a participant from an activity
 func (as *ActivityService) RemoveAParticipantFromAnActivity(w rest.ResponseWriter, r *rest.Request) {
-	activity := as.getOrCreateActivityFromRequest(r)
+	activity, err := as.getOrCreateActivityFromRequest(r)
+
+	if err != nil {
+		rest.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
 	participant := activity.GetParticipant(getParticipantCodeFromRequest(r))
 
 	if participant == nil {
@@ -78,7 +95,13 @@ func (as *ActivityService) RemoveAParticipantFromAnActivity(w rest.ResponseWrite
 
 // Updates activity state
 func (as *ActivityService) UpdateActivityState(w rest.ResponseWriter, r *rest.Request) {
-	activity := as.getOrCreateActivityFromRequest(r)
+	activity, err := as.getOrCreateActivityFromRequest(r)
+
+	if err != nil {
+		rest.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
 	activity.State = r.PathParam("state")
 
 	if !activity.IsStateValid() {
@@ -111,10 +134,22 @@ func (as *ActivityService) SaveActivity(activity *entities.Activity, eventCode s
 }
 
 // Convenient method to get current activity using request parameters as criteria
-func (as *ActivityService) getOrCreateActivityFromRequest(r *rest.Request) *entities.Activity {
+func (as *ActivityService) getOrCreateActivityFromRequest(r *rest.Request) (*entities.Activity, error) {
 	activityCode := getActivityCodeFromRequest(r)
 	eventCode := getEventCodeFromRequest(r)
-	return as.GetOrCreateActivity(activityCode, eventCode)
+
+	event := &entities.Event{}
+	as.RepositoryService.GetDocument(EventsBucketName, eventCode, event)
+
+	if event.Code == "" {
+		return nil, errors.New("Invalid event code")
+	}
+
+	if !event.EmailConfirmed {
+		return nil, errors.New("Event not confirmed yet")
+	}
+
+	return as.GetOrCreateActivity(activityCode, eventCode), nil
 }
 
 // Convenient method to generate bucket name for one specific event

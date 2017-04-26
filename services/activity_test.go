@@ -15,10 +15,28 @@ func TestGetAndAddParticipantActivityService(t *testing.T) {
 	defer apptest.DeleteTestApp(jeparticipe)
 
 	// ------------------------------------
+	// Get a new activity (Event does not exist)
+	// ------------------------------------
+
+	recorded := test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/donotexistsevent/activity/testbucket", nil))
+	recorded.CodeIs(404)
+	recorded.BodyIs("{\"Error\":\"Invalid event code\"}")
+
+	// ------------------------------------
+	// Get a new activity (Event not confirmed)
+	// ------------------------------------
+
+	eventNotConfirmed, _ := entities.NewPendingConfirmationEvent("notconfirmed", "ip", "test@test.com")
+	jeparticipe.EventService.SaveEvent(eventNotConfirmed)
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/notconfirmed/activity/testbucket", nil))
+	recorded.CodeIs(404)
+	recorded.BodyIs("{\"Error\":\"Event not confirmed yet\"}")
+
+	// ------------------------------------
 	// Get a new activity
 	// ------------------------------------
 
-	recorded := test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/testevent/activity/testbucket", nil))
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/testevent/activity/testbucket", nil))
 	recorded.CodeIs(200)
 	recorded.ContentTypeIsJson()
 
@@ -183,6 +201,14 @@ func TestRemoveParticipantActivityService(t *testing.T) {
 	recorded.CodeIs(404)
 
 	// ------------------------------------
+	// Remove a participant from a non existing event
+	// ------------------------------------
+
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/donotexistsevent/activity/testbucket/participant/testcode/delete", nil))
+	recorded.CodeIs(404)
+	recorded.BodyIs("{\"Error\":\"Invalid event code\"}")
+
+	// ------------------------------------
 	// Remove a participant with success (same IP / open activity)
 	// ------------------------------------
 
@@ -331,10 +357,18 @@ func TestChangeStateActivityService(t *testing.T) {
 	defer apptest.DeleteTestApp(jeparticipe)
 
 	// ------------------------------------
+	// Change bucket state (Event does not exist)
+	// ------------------------------------
+
+	recorded := test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/donotexists/activity/testbucket/state/test", nil))
+	recorded.CodeIs(404)
+	recorded.BodyIs("{\"Error\":\"Invalid event code\"}")
+
+	// ------------------------------------
 	// Change bucket state (invalid state)
 	// ------------------------------------
 
-	recorded := test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/testevent/activity/testbucket/state/test", nil))
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/testevent/activity/testbucket/state/test", nil))
 	recorded.CodeIs(406)
 
 	// ------------------------------------
