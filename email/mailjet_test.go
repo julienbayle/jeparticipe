@@ -1,6 +1,5 @@
 package email
 
-/**
 import (
 	"testing"
 
@@ -16,4 +15,4 @@ func TestSendEmail(t *testing.T) {
 	}
 
 	assert.NoError(t, emailRelay.Send(email))
-}*/
+}
