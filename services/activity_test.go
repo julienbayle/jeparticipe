@@ -139,7 +139,7 @@ func TestGetAndAddParticipantActivityService(t *testing.T) {
 	}
 	data = &map[string]string{"text": longtext, "admintext": "private"}
 	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/testevent/activity/testbucket/participant", data))
-	recorded.CodeIs(406)
+	recorded.CodeIs(400)
 
 	// ------------------------------------
 	// Add too much participants
@@ -151,7 +151,7 @@ func TestGetAndAddParticipantActivityService(t *testing.T) {
 		recorded.CodeIs(200)
 	}
 	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/testevent/activity/testlimit/participant", data))
-	recorded.CodeIs(401)
+	recorded.CodeIs(400)
 
 	// ------------------------------------
 	// Add participant with no public data
@@ -159,7 +159,7 @@ func TestGetAndAddParticipantActivityService(t *testing.T) {
 
 	data = &map[string]string{"text": "", "admintext": "private"}
 	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/testevent/activity/testbucket/participant", data))
-	recorded.CodeIs(406)
+	recorded.CodeIs(400)
 
 	// ------------------------------------
 	// Add participant to a closed activity as user
@@ -369,7 +369,7 @@ func TestChangeStateActivityService(t *testing.T) {
 	// ------------------------------------
 
 	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/testevent/activity/testbucket/state/test", nil))
-	recorded.CodeIs(406)
+	recorded.CodeIs(400)
 
 	// ------------------------------------
 	// Change bucket state without permission

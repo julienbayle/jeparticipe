@@ -21,7 +21,7 @@ type EventService struct {
 	Secret            string
 }
 
-// Returns an event state (can be used to check if an event code is used or not)
+// GetEventStatus returns an event state (can be used to check if an event code is used or not)
 func (es *EventService) GetEventStatus(w rest.ResponseWriter, r *rest.Request) {
 	eventCode := getEventCodeFromRequest(r)
 	event := es.GetEvent(eventCode)
@@ -34,7 +34,7 @@ func (es *EventService) GetEventStatus(w rest.ResponseWriter, r *rest.Request) {
 	w.WriteJson(map[string]bool{"confirmed": event.EmailConfirmed})
 }
 
-// Returns the config field value
+// GetEventConfig returns the config field value
 func (es *EventService) GetEventConfig(w rest.ResponseWriter, r *rest.Request) {
 	eventCode := getEventCodeFromRequest(r)
 	event := es.GetEvent(eventCode)
@@ -63,7 +63,7 @@ func (es *EventService) GetEventConfig(w rest.ResponseWriter, r *rest.Request) {
 	w.WriteJson(d)
 }
 
-// Updates the config field
+// SetEventConfig updates the config field
 func (es *EventService) SetEventConfig(w rest.ResponseWriter, r *rest.Request) {
 	eventCode := getEventCodeFromRequest(r)
 	event := es.GetEvent(eventCode)
@@ -111,7 +111,7 @@ func (es *EventService) SetEventConfig(w rest.ResponseWriter, r *rest.Request) {
 	}
 }
 
-// Creates a new pending confirmation event
+// CreatePendingEvent creates a new pending confirmation event
 func (es *EventService) CreatePendingEvent(w rest.ResponseWriter, r *rest.Request) {
 	eventPayload := &entities.Event{}
 	err := r.DecodeJsonPayload(&eventPayload)
@@ -142,10 +142,14 @@ func (es *EventService) CreatePendingEvent(w rest.ResponseWriter, r *rest.Reques
 	email.AddBodyUsingTemplate("../templates/confirm.html", templateData)
 	es.EmailRelay.Send(email)
 
-	es.SaveEvent(event)
+	err = es.SaveEvent(event)
+	if err != nil {
+		panic(err)
+		return
+	}
 }
 
-// Validates an event (link from a event confirmation email)
+// ConfirmEvent validates an event (link from a event confirmation email)
 func (es *EventService) ConfirmEvent(w rest.ResponseWriter, r *rest.Request) {
 	eventCode := getEventCodeFromRequest(r)
 	event := es.GetEvent(eventCode)
@@ -156,19 +160,19 @@ func (es *EventService) ConfirmEvent(w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	if event.EmailConfirmed {
-		rest.Error(w, "Already confirmed", http.StatusGone)
+		rest.Error(w, "Already confirmed", http.StatusNotModified)
 		return
 	}
 
 	// Check validation code
 	confirmCode := r.PathParam("confirm_code")
 	if confirmCode != event.ConfirmCode(es.Secret) {
-		rest.Error(w, "Invalid confirmation code", http.StatusForbidden)
+		rest.Error(w, "Invalid confirmation code", http.StatusBadRequest)
 		return
 	}
 
 	if err := es.ConfirmAndSaveEvent(event); err != nil {
-		rest.Error(w, "Unable to confirm event", http.StatusInternalServerError)
+		panic(err)
 		return
 	}
 
@@ -186,7 +190,7 @@ func (es *EventService) ConfirmEvent(w rest.ResponseWriter, r *rest.Request) {
 	es.EmailRelay.Send(email)
 }
 
-// Send an email with the event informations
+// SendEventInformationByMail sends an email to the event admin with the event informations
 func (es *EventService) SendEventInformationByMail(w rest.ResponseWriter, r *rest.Request) {
 	eventCode := getEventCodeFromRequest(r)
 	event := es.GetEvent(eventCode)
@@ -223,7 +227,7 @@ func (es *EventService) SendEventInformationByMail(w rest.ResponseWriter, r *res
 	}
 }
 
-// Confirms an event an init activities collection for this event
+// ConfirmAndSaveEvent confirms an event an init activities collection for this event
 func (es *EventService) ConfirmAndSaveEvent(event *entities.Event) error {
 	// Save updated event
 	event.EmailConfirmed = true
@@ -234,7 +238,7 @@ func (es *EventService) ConfirmAndSaveEvent(event *entities.Event) error {
 	return es.RepositoryService.CreateCollectionIfNotExists(GetActivityBucketName(event.Code))
 }
 
-// Gets an event from database
+// GetEvent gets an event from database
 func (es *EventService) GetEvent(eventCode string) *entities.Event {
 	event := &entities.Event{}
 	es.RepositoryService.GetDocument(EventsBucketName, eventCode, event)
@@ -245,12 +249,12 @@ func (es *EventService) GetEvent(eventCode string) *entities.Event {
 	return event
 }
 
-// Saves an event to bolt database
+// SaveEvent saves an event to the database
 func (es *EventService) SaveEvent(event *entities.Event) error {
 	return es.RepositoryService.CommitDocument(EventsBucketName, event.Code, event)
 }
 
-// Convenient method to get event code from request
+// getEventCodeFromRequest is a convenient method to get an event code from request
 func getEventCodeFromRequest(r *rest.Request) string {
 	extractor, _ := regexp.Compile("[-A-Za-z0-9]{2,50}")
 	return extractor.FindString(r.PathParam("event"))

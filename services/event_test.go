@@ -294,7 +294,7 @@ func TestConfirmEvent(t *testing.T) {
 
 	rq = test.MakeSimpleRequest("GET", "/event/myevent/confirm/badcode", nil)
 	recorded = test.RunRequest(t, handler, rq)
-	recorded.CodeIs(403)
+	recorded.CodeIs(400)
 	recorded.BodyIs("{\"Error\":\"Invalid confirmation code\"}")
 
 	// ------------------------------------
@@ -333,7 +333,7 @@ func TestConfirmEvent(t *testing.T) {
 	}
 	rq = test.MakeSimpleRequest("GET", "/event/myevent/confirm/"+event.ConfirmCode(jeparticipe.EventService.Secret), nil)
 	recorded = test.RunRequest(t, handler, rq)
-	recorded.CodeIs(410)
+	recorded.CodeIs(304)
 	recorded.BodyIs("{\"Error\":\"Already confirmed\"}")
 
 }
