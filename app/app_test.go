@@ -17,4 +17,7 @@ func TestApp(t *testing.T) {
 	rq := apptest.MakeAdminRequest("PUT", "/event/"+event.Code+"/activity/test/state/close", nil, token)
 	recorder := test.RunRequest(t, handler, rq)
 	recorder.CodeIs(200)
+
+	assert.Len(t, jeparticipe.SuperAdminPassword, 12)
+	assert.Len(t, jeparticipe.Secret, 64)
 }

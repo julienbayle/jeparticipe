@@ -32,7 +32,7 @@ func NewApp(dbFilePath string) *App {
 	secret := services.GetProperty(repositoryService, "secret", services.NewPassword(64))
 
 	// Superadmin password allows to be admin in all events
-	superAdminPassword := services.GetProperty(repositoryService, "secret", services.NewPassword(12))
+	superAdminPassword := services.GetProperty(repositoryService, "superadminpass", services.NewPassword(12))
 
 	return &App{
 		Secret:             secret,
