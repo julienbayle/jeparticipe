@@ -7,7 +7,7 @@ import (
 )
 
 func TestEmailTemplate(t *testing.T) {
-	email := NewEmail("jbayle@gmail.com", "Object", "A body")
+	email := NewEmail("test@circuleo.fr", "Object", "A body")
 
 	templateData := struct {
 		URL string
@@ -22,7 +22,7 @@ func TestEmailTemplate(t *testing.T) {
 }
 
 func TestEmailTemplatePanics(t *testing.T) {
-	email := NewEmail("jbayle@gmail.com", "Object", "A body")
+	email := NewEmail("test@circuleo.fr", "Object", "A body")
 
 	templateData := struct {
 		URL string
