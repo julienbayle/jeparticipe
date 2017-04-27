@@ -25,6 +25,7 @@ func TestAdminPriviledge(t *testing.T) {
 	r.PathParams["event"] = "testevent"
 	r.Env["REMOTE_USER"] = "testevent-admin"
 	assert.True(t, hasAdminPriviledge(r))
+	assert.False(t, hasSuperAdminPriviledge(r))
 }
 
 func TestSuperadminPriviledge(t *testing.T) {
@@ -36,6 +37,7 @@ func TestSuperadminPriviledge(t *testing.T) {
 	r = NewRequest()
 	r.Env["REMOTE_USER"] = "superadmin"
 	assert.True(t, hasAdminPriviledge(r))
+	assert.True(t, hasSuperAdminPriviledge(r))
 }
 
 func TestNoPriviledge(t *testing.T) {

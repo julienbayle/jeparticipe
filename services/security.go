@@ -21,7 +21,7 @@ type SecurityToken struct {
 	Token string `json:"token"`
 }
 
-// Checks that current user has admin priviledge
+// hasAdminPriviledge checks that current user has admin priviledge
 func hasAdminPriviledge(r *rest.Request) bool {
 	user := r.Env["REMOTE_USER"]
 	eventCode := getEventCodeFromRequest(r)
@@ -39,6 +39,12 @@ func hasAdminPriviledge(r *rest.Request) bool {
 	}
 
 	return false
+}
+
+// hasSuperAdminPriviledge checks that current user has super admin priviledge
+func hasSuperAdminPriviledge(r *rest.Request) bool {
+	user := r.Env["REMOTE_USER"]
+	return user != nil && user.(string) == SuperAdminLogin
 }
 
 func GetEventAdminLogin(eventCode string) string {

@@ -46,6 +46,19 @@ func GetAdminTokenForEvent(t *testing.T, handler *http.Handler, event *entities.
 	return nToken.Token
 }
 
+// Returns a login token
+func GetSuperAdminToken(t *testing.T, handler *http.Handler, app *app.App) string {
+	loginCreds := map[string]string{"username": "superadmin", "password": app.SuperAdminPassword}
+	rightCredReq := test.MakeSimpleRequest("POST", "/login", loginCreds)
+	recorded := test.RunRequest(t, *handler, rightCredReq)
+	recorded.CodeIs(200)
+	recorded.ContentTypeIsJson()
+
+	nToken := services.SecurityToken{}
+	test.DecodeJsonPayload(recorded.Recorder, &nToken)
+	return nToken.Token
+}
+
 // Sends a request to the app api as admin
 func MakeAdminRequest(method string, url string, data interface{}, token string) *http.Request {
 	stateReq := test.MakeSimpleRequest(method, url, data)

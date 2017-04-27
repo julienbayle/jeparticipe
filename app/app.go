@@ -102,11 +102,14 @@ func (app *App) BuildApi(mode string, baseUrl string) *rest.Api {
 
 	// Adds routes
 	uLogin := baseUrl + "/login"
+	uBackup := baseUrl + "/backup"
 	uEvent := baseUrl + "/event"
 	uBucket := uEvent + "/:event/activity/:acode"
 
 	router, err := rest.MakeRouter(
 		rest.Post(uLogin, jwt_middleware.LoginHandler),
+
+		rest.Get(uBackup, app.RepositoryService.Backup),
 
 		rest.Post(uEvent, app.EventService.CreatePendingEvent),
 		rest.Get(uEvent+"/:event/lostaccount", app.EventService.SendEventInformationByMail),
