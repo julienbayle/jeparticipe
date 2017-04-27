@@ -1,6 +1,8 @@
 package services
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 
@@ -30,6 +32,83 @@ func (es *EventService) GetEventStatus(w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	w.WriteJson(map[string]bool{"confirmed": event.EmailConfirmed})
+}
+
+// Returns the config field value
+func (es *EventService) GetEventConfig(w rest.ResponseWriter, r *rest.Request) {
+	eventCode := getEventCodeFromRequest(r)
+	event := es.GetEvent(eventCode)
+
+	if event == nil {
+		rest.Error(w, "Invalid code", http.StatusNotFound)
+		return
+	}
+
+	if !event.EmailConfirmed {
+		rest.Error(w, "Event not confirmed yet", http.StatusBadRequest)
+		return
+	}
+
+	if event.Config == nil {
+		w.WriteJson(map[string]string{})
+		return
+	}
+
+	d := &map[string]interface{}{}
+	err := json.Unmarshal(event.Config, d)
+	if err != nil {
+		panic("Invalid event config for " + event.Code + ", not a valid JSON file")
+	}
+
+	w.WriteJson(d)
+}
+
+// Updates the config field
+func (es *EventService) SetEventConfig(w rest.ResponseWriter, r *rest.Request) {
+	eventCode := getEventCodeFromRequest(r)
+	event := es.GetEvent(eventCode)
+
+	if event == nil {
+		rest.Error(w, "Invalid code", http.StatusNotFound)
+		return
+	}
+
+	if !hasAdminPriviledge(r) {
+		rest.Error(w, "Access forbidden", http.StatusForbidden)
+		return
+	}
+
+	if !event.EmailConfirmed {
+		rest.Error(w, "Event not confirmed yet", http.StatusBadRequest)
+		return
+	}
+
+	if r.ContentLength > 50000 {
+		rest.Error(w, "Config data size is too large (should be less than 50ko)", http.StatusBadRequest)
+		return
+	}
+
+	config, err := ioutil.ReadAll(r.Body)
+	r.Body.Close()
+	if err != nil {
+		rest.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	event.Config = config
+
+	d := &map[string]interface{}{}
+	err = json.Unmarshal(event.Config, d)
+	if err != nil {
+		rest.Error(w, "Not a valid JSON document", http.StatusBadRequest)
+		return
+	}
+
+	err = es.SaveEvent(event)
+	if err != nil {
+		panic(err)
+		return
+	}
 }
 
 // Creates a new pending confirmation event

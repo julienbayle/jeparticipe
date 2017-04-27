@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/ant0ine/go-json-rest/rest/test"
 	"github.com/julienbayle/jeparticipe/app/test"
 	"github.com/julienbayle/jeparticipe/email"
@@ -13,6 +14,11 @@ import (
 
 type EventState struct {
 	Confirmed bool `json:"confirmed"`
+}
+
+type ComplexJson struct {
+	Text  string
+	Child *ComplexJson
 }
 
 func TestEventState(t *testing.T) {
@@ -49,6 +55,138 @@ func TestEventState(t *testing.T) {
 	eventState = &EventState{}
 	assert.NoError(t, recorded.DecodeJsonPayload(&eventState))
 	assert.False(t, eventState.Confirmed)
+}
+
+func TestGetEventConfig(t *testing.T) {
+	jeparticipe, handler, _ := apptest.CreateATestApp()
+	defer apptest.DeleteTestApp(jeparticipe)
+
+	// ------------------------------------
+	// Event does not exist
+	// ------------------------------------
+
+	recorded := test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/invalidcode/config", nil))
+	recorded.CodeIs(404)
+
+	// ------------------------------------
+	// Event exists but is not confirmed yet
+	// ------------------------------------
+
+	event, _ := entities.NewPendingConfirmationEvent("notconfirmed", "ip", "test@test.com")
+	jeparticipe.EventService.SaveEvent(event)
+
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/notconfirmed/config", nil))
+	recorded.CodeIs(400)
+
+	// ------------------------------------
+	// Event exists and is confirmed but config is not initialized yet
+	// ------------------------------------
+
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/testevent/config", nil))
+	recorded.CodeIs(200)
+	recorded.BodyIs("{}")
+
+	// ------------------------------------
+	// Event exists and is confirmed, config is an invalid JSON (quote missing)
+	// ------------------------------------
+
+	assert.Panics(t, func() {
+		rq := test.MakeSimpleRequest("GET", "/event/badjson/config", nil)
+		jeparticipe.EventService.GetEventConfig(nil, &rest.Request{Request: rq, PathParams: map[string]string{"event": "badjson"}, Env: nil})
+	})
+
+	// ------------------------------------
+	// Event exists and is confirmed, config is a valid JSON
+	// ------------------------------------
+
+	eventGoodJson, _ := entities.NewPendingConfirmationEvent("goodjson", "ip", "test@test.com")
+	eventGoodJson.Config = []byte(`{"test":"test2", "test3":{"test4":5, "test6":5.0, "test7": [5, 2, 1], "test8": [], "test9":{}}}`)
+	jeparticipe.EventService.ConfirmAndSaveEvent(eventGoodJson)
+
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/goodjson/config", nil))
+	recorded.CodeIs(200)
+	recorded.BodyIs(`{"test":"test2","test3":{"test4":5,"test6":5,"test7":[5,2,1],"test8":[],"test9":{}}}`)
+}
+
+func TestSetEventConfig(t *testing.T) {
+	jeparticipe, handler, event := apptest.CreateATestApp()
+	defer apptest.DeleteTestApp(jeparticipe)
+
+	// ------------------------------------
+	// Event does not exists
+	// ------------------------------------
+
+	recorded := test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/invalidcode/config", nil))
+	recorded.CodeIs(404)
+	recorded.BodyIs("{\"Error\":\"Invalid code\"}")
+
+	// ------------------------------------
+	// Event exists but is not confirmed yet
+	// ------------------------------------
+
+	eventNotConfirmed, _ := entities.NewPendingConfirmationEvent("notconfirmed", "ip", "test@test.com")
+	jeparticipe.EventService.SaveEvent(eventNotConfirmed)
+
+	token := apptest.GetAdminTokenForEvent(t, &handler, eventNotConfirmed)
+	rq := apptest.MakeAdminRequest("PUT", "/event/notconfirmed/config", nil, token)
+	recorded = test.RunRequest(t, handler, rq)
+	recorded.CodeIs(400)
+	recorded.BodyIs("{\"Error\":\"Event not confirmed yet\"}")
+
+	// ------------------------------------
+	// Event exists and is confirmed / Send a valid JSON as config as an anonymous user
+	// ------------------------------------
+
+	data := &ComplexJson{
+		Text: "toto",
+		Child: &ComplexJson{
+			Text: "toto2",
+		},
+	}
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("PUT", "/event/testevent/config", data))
+	recorded.CodeIs(403)
+	recorded.BodyIs(`{"Error":"Access forbidden"}`)
+
+	// ------------------------------------
+	// Event exists and is confirmed / Send a valid JSON as config as admin
+	// ------------------------------------
+
+	token = apptest.GetAdminTokenForEvent(t, &handler, event)
+	rq = apptest.MakeAdminRequest("PUT", "/event/testevent/config", data, token)
+	recorded = test.RunRequest(t, handler, rq)
+	recorded.CodeIs(200)
+	recorded.BodyIs("")
+
+	eventModified := jeparticipe.EventService.GetEvent(event.Code)
+	assert.Equal(t, `{"Text":"toto","Child":{"Text":"toto2","Child":null}}`, string(eventModified.Config))
+
+	recorded = test.RunRequest(t, handler, test.MakeSimpleRequest("GET", "/event/testevent/config", nil))
+	recorded.CodeIs(200)
+	recorded.BodyIs(`{"Child":{"Child":null,"Text":"toto2"},"Text":"toto"}`)
+
+	// ------------------------------------
+	// Event exists and is confirmed / Send a bad JSON as config
+	// ------------------------------------
+
+	dataBadJson := "{test:"
+	rq = apptest.MakeAdminRequest("PUT", "/event/testevent/config", dataBadJson, token)
+	recorded = test.RunRequest(t, handler, rq)
+	recorded.CodeIs(400)
+	recorded.BodyIs(`{"Error":"Not a valid JSON document"}`)
+
+	// ------------------------------------
+	// Event exists and is confirmed / Message is too long
+	// ------------------------------------
+
+	toolong := ""
+	for i := 0; i < 50000+1; i++ {
+		toolong = toolong + "m"
+	}
+
+	rq = apptest.MakeAdminRequest("PUT", "/event/testevent/config", toolong, token)
+	recorded = test.RunRequest(t, handler, rq)
+	recorded.CodeIs(400)
+	recorded.BodyIs(`{"Error":"Config data size is too large (should be less than 50ko)"}`)
 }
 
 func TestCreatePendingEvent(t *testing.T) {

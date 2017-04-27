@@ -112,6 +112,8 @@ func (app *App) BuildApi(mode string, baseUrl string) *rest.Api {
 		rest.Get(uEvent+"/:event/lostaccount", app.EventService.SendEventInformationByMail),
 		rest.Get(uEvent+"/:event/confirm/:confirm_code", app.EventService.ConfirmEvent),
 		rest.Get(uEvent+"/:event/status", app.EventService.GetEventStatus),
+		rest.Get(uEvent+"/:event/config", app.EventService.GetEventConfig),
+		rest.Put(uEvent+"/:event/config", app.EventService.SetEventConfig),
 
 		rest.Get(uBucket, app.ActivityService.GetActivity),
 		rest.Put(uBucket+"/state/:state", app.ActivityService.UpdateActivityState),

@@ -20,6 +20,7 @@ type Event struct {
 	UserEmail      string
 	EmailConfirmed bool
 	AdminPassword  string
+	Config         []byte
 }
 
 // Creates a new pending confirmation event
@@ -42,6 +43,7 @@ func NewPendingConfirmationEvent(code string, ip string, userEmail string) (*Eve
 		UserEmail:      userEmail,
 		EmailConfirmed: false,
 		AdminPassword:  "generatedonconfirm",
+		Config:         nil,
 	}, nil
 }
 
