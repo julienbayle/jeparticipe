@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -25,6 +26,8 @@ func main() {
 
 	jeparticipe := app.NewApp(*dbFile)
 	defer jeparticipe.ShutDown()
+
+	fmt.Println("Super admin password is " + jeparticipe.SuperAdminPassword)
 
 	api := jeparticipe.BuildApi(app.ProdMode, *baseUrl)
 	log.Fatal(http.ListenAndServe(":"+*port, api.MakeHandler()))
